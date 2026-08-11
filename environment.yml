@@ -1,0 +1,56 @@
+# Conda environment for the music-edit model (Qwen2.5-Omni thinker + fusion
+# MusicGen bridge): training, inference, and the HTTP API (musicgen_api.py).
+#
+#   conda env create -f src/environment.yml
+#   conda activate music-edit
+#
+# Notes:
+# - torch is installed via pip with the CUDA 12.8 wheel index (matches the
+#   environment this model was developed on: torch 2.10 + H100).
+# - cuDNN quirk: the code disables cuDNN at import (torch.backends.cudnn) —
+#   handled inside the repo, no action needed here.
+# - Evaluation-only extras (CLAP/PANNs/Demucs/torchmetrics/scikit-image) are
+#   included; remove them if you only need inference/serving.
+# - MultiBand-Diffusion decoding (optional) lives in a separate audiocraft
+#   environment and is NOT part of this file.
+
+name: music-edit
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - ffmpeg            # audio decoding backend for librosa/soundfile
+  - pip:
+      # ── core DL stack ────────────────────────────────────────
+      - --extra-index-url https://download.pytorch.org/whl/cu128
+      - torch==2.10.0
+      - torchaudio==2.10.0
+      - transformers==5.12.1
+      - peft==0.18.1
+      - accelerate==1.13.0
+      - safetensors==0.4.3
+      - sentencepiece==0.1.99
+      - huggingface_hub==1.21.0
+      - einops==0.8.2
+      # ── audio I/O & DSP ─────────────────────────────────────
+      - librosa==0.11.0
+      - soundfile==0.14.0
+      - numpy==1.26.4
+      - scipy==1.15.1
+      # ── serving (HTTP API) ──────────────────────────────────
+      - fastapi==0.140.13
+      - uvicorn==0.38.0
+      - pydantic==2.12.4
+      - requests==2.32.3
+      # ── evaluation (optional for pure inference) ────────────
+      - laion_clap==1.1.7        # CLAP text-audio score
+      - muq==0.1.0               # MuQ-MuLan embeddings (cos metrics)
+      - torchmetrics==1.9.0      # SI-SDR
+      - scikit-image==0.26.0     # SSIM
+      - panns_inference==0.1.1   # KL (AudioSet classifier)
+      - demucs==4.1.0            # P-Demucs stem metric
+      # ── misc ────────────────────────────────────────────────
+      - tqdm==4.66.4
+      - PyYAML==6.0.1

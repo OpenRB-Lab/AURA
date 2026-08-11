@@ -1,0 +1,120 @@
+# ──────────────────────────────────────────────────────────────
+# Image-Conditioned DiffRhythm LoRA — training config
+# ──────────────────────────────────────────────────────────────
+
+# ── Paths ──
+diffrhythm_root: ./src/DiffRhythm
+dataset_root: ./data/image_music
+cache_dir: ./data/image_music/cached_latents
+checkpoint_dir: ./ckpts/it_c_crossattn
+# Note: previous runs saved to it_a, it_b_contrastive, mixed_suno_tq
+pretrained_cache: ./weights
+
+# ── Data ──
+data:
+  painting_dir: ${dataset_root}/painting_dataset
+  music_dir: ${dataset_root}/music_dataset
+  categories:
+    - 安静平和
+    - 悲伤孤傲
+    - 活泼欢快
+    - 激昂肆意
+  sampling_rate: 44100
+  target_sr: 44100
+  audio_channels: 2
+  max_audio_len_sec: 30
+  downsampling_ratio: 2048
+
+# ── Image encoder ──
+image_encoder:
+  name: siglip
+  model_name: google/siglip-base-patch16-256
+  embed_dim: 768            # SigLIP-base pooler output dim
+  freeze: true
+
+# ── Projector (image → MuLan space) ──
+projector:
+  d_img: 768
+  d_text: 512               # MuLan text embedding dim
+  d_mulan: 512              # must match DiffRhythm style dim
+  hidden_dim: 1024
+  num_layers: 2
+  dropout: 0.1
+  l2_normalize: true
+
+# ── Image cross-attention (ControlNet-style) ──
+image_cross_attn:
+  enabled: true
+  d_img: 768                # SigLIP patch token dim
+  num_heads: 16
+  num_cross_attn_layers: 8  # applied at every other DiT layer
+  dropout: 0.1
+
+# ── LoRA ──
+lora:
+  enabled: true              # set to false to train without LoRA (only projector + cross-attn)
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.1
+  target_modules:
+    - self_attn.q_proj
+    - self_attn.k_proj
+    - self_attn.v_proj
+    - self_attn.o_proj
+  bias: none
+
+# ── DiffRhythm model ──
+model:
+  dit_config: ${diffrhythm_root}/config/diffrhythm-1b.json
+  max_frames: 2048
+  mel_dim: 64
+  cond_dim: 512
+  dit_dim: 2048
+
+# ── Training ──
+training:
+  epochs: 100
+  batch_size: 1              # per GPU (reduced from 2 for memory)
+  grad_accumulation_steps: 8  # effective batch = batch_size * n_gpus * grad_accum = 16
+  learning_rate_lora: 1.0e-4
+  learning_rate_proj: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  warmup_ratio: 0.05
+  scheduler: cosine
+  precision: fp16             # fp16 | bf16 | fp32
+  seed: 42
+
+  # CFG drop rates (during training)
+  audio_drop_prob: 1.0        # always drop audio cond (no ref audio)
+  style_drop_prob: 0.1
+  lrc_drop_prob: 0.0          # instrumental mode, lyrics always empty
+  cond_drop_prob: 0.0
+
+  # Projector alignment loss weight (cosine similarity to MuLan audio embedding)
+  align_weight: 1.0
+  # Contrastive loss (InfoNCE): style[i]↔audio[i] positive, style[i]↔audio[j] negative
+  contrastive_weight: 0.5
+  contrastive_temp: 0.07
+
+  # Logging / saving
+  save_every_steps: 500
+  log_every_steps: 10
+  eval_every_steps: 200
+
+# ── Multi-GPU (accelerate) ──
+distributed:
+  num_gpus: 2
+  strategy: ddp              # ddp | fsdp | deepspeed
+
+# ── Inference ──
+inference:
+  steps: 32
+  cfg_strength: 4.0
+  seed: 42
+
+# ── Precompute (prepare_data.py) ──
+precompute:
+  batch_size: 8
+  device: cuda
+  num_workers: 4
