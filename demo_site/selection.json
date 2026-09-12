@@ -1,0 +1,312 @@
+{
+ "best_add": [
+  {
+   "domain": "slakh",
+   "task": "add",
+   "idx": 86,
+   "ssim": 0.9760673002727686,
+   "instruction": "Music piece. Instruct: Add bass.",
+   "target_class": "Bass",
+   "genre": ""
+  },
+  {
+   "domain": "slakh",
+   "task": "add",
+   "idx": 80,
+   "ssim": 0.9429976263862656,
+   "instruction": "Music piece. Instruct: Add guitar.",
+   "target_class": "Guitar",
+   "genre": ""
+  },
+  {
+   "domain": "slakh",
+   "task": "add",
+   "idx": 51,
+   "ssim": 0.921787663636178,
+   "instruction": "Music piece. Instruct: Add piano.",
+   "target_class": "Piano",
+   "genre": ""
+  },
+  {
+   "domain": "moises",
+   "task": "add",
+   "idx": 7,
+   "ssim": 0.9583539429465207,
+   "instruction": "Add a distorted bass guitar to the mix to thicken the low end for this rock track.",
+   "target_class": "bass",
+   "genre": "rock"
+  },
+  {
+   "domain": "moises",
+   "task": "add",
+   "idx": 50,
+   "ssim": 0.9342998372343845,
+   "instruction": "add some subtle fingerpicking guitar to the singer songwriter track",
+   "target_class": "guitar",
+   "genre": "singer_songwriter"
+  },
+  {
+   "domain": "moises",
+   "task": "add",
+   "idx": 5,
+   "ssim": 0.8897630633431589,
+   "instruction": "add piano to the mix",
+   "target_class": "piano",
+   "genre": "singer_songwriter"
+  }
+ ],
+ "best_remove": [
+  {
+   "domain": "slakh",
+   "task": "remove",
+   "idx": 52,
+   "ssim": 0.9819372180596081,
+   "instruction": "Music piece. Instruct: No bass.",
+   "target_class": "Bass",
+   "genre": "",
+   "si_sdr": 12.581877708435059,
+   "si_sdri": 6.16288423538208
+  },
+  {
+   "domain": "slakh",
+   "task": "remove",
+   "idx": 14,
+   "ssim": 0.9813604385408049,
+   "instruction": "Music piece. Instruct: No bass.",
+   "target_class": "Bass",
+   "genre": "",
+   "si_sdr": 15.115848541259766,
+   "si_sdri": 9.877079010009766
+  },
+  {
+   "domain": "slakh",
+   "task": "remove",
+   "idx": 25,
+   "ssim": 0.9726157822256579,
+   "instruction": "Music piece. Instruct: No piano.",
+   "target_class": "Piano",
+   "genre": "",
+   "si_sdr": 19.190471649169922,
+   "si_sdri": -0.0032253265380859375
+  },
+  {
+   "domain": "moises",
+   "task": "remove",
+   "idx": 49,
+   "ssim": 0.9736897464333261,
+   "instruction": "remove the bass from the rock mix",
+   "target_class": "bass",
+   "genre": "rock",
+   "si_sdr": 23.92432975769043,
+   "si_sdri": 14.051081657409668
+  },
+  {
+   "domain": "moises",
+   "task": "remove",
+   "idx": 13,
+   "ssim": 0.9733816848057524,
+   "instruction": "Can you mute the bassline in this rap track?",
+   "target_class": "bass",
+   "genre": "rap",
+   "si_sdr": 13.785038948059082,
+   "si_sdri": 11.790013074874878
+  },
+  {
+   "domain": "moises",
+   "task": "remove",
+   "idx": 1,
+   "ssim": 0.9357768036450057,
+   "instruction": "please remove the piano from this pop track",
+   "target_class": "piano",
+   "genre": "pop",
+   "si_sdr": 19.220067977905273,
+   "si_sdri": 0.022100448608398438
+  }
+ ],
+ "best_extract": [
+  {
+   "domain": "slakh",
+   "task": "extract",
+   "idx": 57,
+   "ssim": 0.7848222136602488,
+   "instruction": "Music piece. Instruct: Only drums.",
+   "target_class": "Drums",
+   "genre": "",
+   "si_sdr": 10.294881820678711,
+   "si_sdri": 17.205562591552734
+  },
+  {
+   "domain": "slakh",
+   "task": "extract",
+   "idx": 52,
+   "ssim": 0.780341293612281,
+   "instruction": "Music piece. Instruct: Only drums.",
+   "target_class": "Drums",
+   "genre": "",
+   "si_sdr": 10.591972351074219,
+   "si_sdri": 18.2335844039917
+  },
+  {
+   "domain": "moises",
+   "task": "extract",
+   "idx": 5,
+   "ssim": 0.9555636883384497,
+   "instruction": "Keep only the drums and mute the guitar, bass, and vocals.",
+   "target_class": "drums",
+   "genre": "rock",
+   "si_sdr": 7.211789131164551,
+   "si_sdri": 13.423959255218506
+  },
+  {
+   "domain": "moises",
+   "task": "extract",
+   "idx": 51,
+   "ssim": 0.9050989875899486,
+   "instruction": "Keep only the guitar and mute everything else.",
+   "target_class": "guitar",
+   "genre": "pop",
+   "si_sdr": 24.51940155029297,
+   "si_sdri": 6.067228317260742
+  }
+ ],
+ "extract_fail": [
+  {
+   "domain": "slakh",
+   "task": "extract",
+   "idx": 58,
+   "ssim": 0.03568748526313631,
+   "instruction": "Music piece. Instruct: Only piano.",
+   "target_class": "Piano",
+   "genre": "",
+   "si_sdr": -39.72699737548828,
+   "si_sdri": -41.808149337768555
+  },
+  {
+   "domain": "slakh",
+   "task": "extract",
+   "idx": 29,
+   "ssim": 0.07652441429578881,
+   "instruction": "Music piece. Instruct: Only guitar.",
+   "target_class": "Guitar",
+   "genre": "",
+   "si_sdr": -53.42737579345703,
+   "si_sdri": -45.05183410644531
+  },
+  {
+   "domain": "slakh",
+   "task": "extract",
+   "idx": 81,
+   "ssim": 0.10617503403297929,
+   "instruction": "Music piece. Instruct: Only bass.",
+   "target_class": "Bass",
+   "genre": "",
+   "si_sdr": -54.113853454589844,
+   "si_sdri": -41.60477638244629
+  },
+  {
+   "domain": "moises",
+   "task": "extract",
+   "idx": 2,
+   "ssim": -0.0707392010858881,
+   "instruction": "Keep only the guitar and mute everything else in this rock track.",
+   "target_class": "guitar",
+   "genre": "rock",
+   "si_sdr": 1.9783498048782349,
+   "si_sdri": 8.66867744922638
+  },
+  {
+   "domain": "moises",
+   "task": "extract",
+   "idx": 28,
+   "ssim": 0.055297170330767025,
+   "instruction": "Mute all instruments except the piano.",
+   "target_class": "piano",
+   "genre": "rock",
+   "si_sdr": -48.87799072265625,
+   "si_sdri": -29.25514793395996
+  },
+  {
+   "domain": "moises",
+   "task": "extract",
+   "idx": 57,
+   "ssim": 0.0715839910835075,
+   "instruction": "Isolate the guitar track and mute all other instruments.",
+   "target_class": "guitar",
+   "genre": "pop",
+   "si_sdr": -49.52728271484375,
+   "si_sdri": -41.300936698913574
+  }
+ ],
+ "multiturn": [
+  {
+   "track": "25516a0f-3197-47e4-8fbf-de9500fc68d2",
+   "cascade": [
+    "drums",
+    "bass",
+    "guitar"
+   ],
+   "mean_ssim": 0.9637932818383338,
+   "ssim_turns": [
+    1.0,
+    0.995,
+    0.897
+   ]
+  },
+  {
+   "track": "524ab371-f6c6-4ff7-b896-e83750c8bef7",
+   "cascade": [
+    "drums",
+    "bass",
+    "guitar"
+   ],
+   "mean_ssim": 0.9588489347636281,
+   "ssim_turns": [
+    1.0,
+    0.941,
+    0.936
+   ]
+  },
+  {
+   "track": "312bec8d-1c61-43e0-924a-1fb87ddc3e41",
+   "cascade": [
+    "drums",
+    "bass",
+    "guitar"
+   ],
+   "mean_ssim": 0.9585101487147374,
+   "ssim_turns": [
+    1.0,
+    0.996,
+    0.88
+   ]
+  },
+  {
+   "track": "4999a0bf-a753-4e0e-85b1-690259dabf96",
+   "cascade": [
+    "drums",
+    "bass",
+    "guitar"
+   ],
+   "mean_ssim": 0.9039698629992806,
+   "ssim_turns": [
+    0.904,
+    0.904,
+    0.904
+   ]
+  },
+  {
+   "track": "13f233aa-a2e5-4683-8533-2f1e344b55b4",
+   "cascade": [
+    "drums",
+    "bass",
+    "guitar"
+   ],
+   "mean_ssim": 0.9028013554122875,
+   "ssim_turns": [
+    1.0,
+    0.988,
+    0.721
+   ]
+  }
+ ]
+}
