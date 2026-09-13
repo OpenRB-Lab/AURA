@@ -1,6 +1,20 @@
-# AURA: A Unified Multimodal Framework for Conversational Music Editing
+# AURA: Unified Multimodal Framework for Conversational Music Editing
+
+**Quoc-Huy Trinh**¹⁴  ·  **Minh-Van Nguyen**²⁴  ·  **Debesh Jha**³
+
+¹ Aalto University  ·  ² Technical University of Denmark  ·  ³ University of South Dakota  ·  ⁴ OpenRB Lab
+
+<p align="center">
+  <img src="assets/aura_arch.png" alt="AURA architecture" width="100%">
+  <br><em>(replace <code>assets/aura_arch.png</code> with the paper figure — see assets/README.txt)</em>
+</p>
 
 Chat with a song, ask for edits in natural language, get edited audio back.
+
+## News
+- [x] [2026.9.13] [AURA model](https://huggingface.co/OpenRB-Lab/AURA) and [AURA-Chat-Edit dataset](https://huggingface.co/datasets/OpenRB-Lab/AURA-Chat-Edit) are released on Hugging Face!
+- [x] [2026.9.13] Training, inference, and evaluation code is released. Checkpoints and demo coming soon!
+- [x] [2026.9.13] [AURA paper](https://arxiv.org/abs/TODO) is released on arXiv. Welcome to check it out!
 
 **Architecture**: a Qwen2.5-Omni-7B thinker (LoRA-tuned) listens to the music
 and the request, replies conversationally, and emits a typed edit-token block
@@ -140,3 +154,20 @@ field, so no further glue is needed.
 | `edit_agent/webapp.py` | Gradio UI |
 | `edit_agent/slakh_edits.py`, `synth_dialogues_slakh.py`, `precompute_*.py` | dataset pipeline |
 | `evaluation/fad.py`, `evaluation/clap_score.py` | metrics |
+| `dataset_generation/` | dataset pipeline code + README |
+| `serving/` | FastAPI + Gradio serving + README |
+
+---
+
+## Citation
+
+```bibtex
+@inproceedings{trinh2026aura,
+  title     = {AURA: Unified Multimodal Framework for Conversational Music Editing},
+  author    = {Trinh, Quoc-Huy and Nguyen, Minh-Van and Jha, Debesh},
+  year      = {2026},
+  note      = {arXiv preprint, arXiv:TODO (to appear)}
+}
+```
+
+> The arXiv version will be linked here once available (~Sep 2026).
