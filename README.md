@@ -5,8 +5,7 @@
 ¹ Aalto University  ·  ² Technical University of Denmark  ·  ³ University of South Dakota  ·  ⁴ OpenRB Lab
 
 <p align="center">
-  <img src="assets/aura_arch.png" alt="AURA architecture" width="100%">
-  <br><em>(replace <code>assets/aura_arch.png</code> with the paper figure — see assets/README.txt)</em>
+  <img src="assets/AURA-1.png" alt="AURA architecture" width="100%">
 </p>
 
 Chat with a song, ask for edits in natural language, get edited audio back.
@@ -137,25 +136,6 @@ Open `http://localhost:7862`: upload a song, pick a chunk, chat
 ("make the chorus more energetic", "remove the drums from 4 to 8 seconds") and
 listen to rendered edits inline. The API accepts the webapp's legacy `prompt`
 field, so no further glue is needed.
-
----
-
-## Repository map (src/)
-
-| Path | Purpose |
-|---|---|
-| `edit_agent/tokens.py` | edit-kind taxonomy + typed block helpers |
-| `edit_agent/qwen_wrapper.py` | thinker loading, hidden-state capture |
-| `edit_agent/musicgen_fusion.py` | dual-stream fusion bridge (train + AR inference) |
-| `edit_agent/train_musicgen_bridge.py` / `train_joint.py` | stage 2 / stage 3 trainers |
-| `edit_agent/probe_musicgen.py` / `eval_musicgen.py` | probe & benchmark |
-| `edit_agent/build/run/score_impg_bench.py` | Instruct-MusicGen-comparable benchmark |
-| `edit_agent/musicgen_api.py` + `scripts/serve_musicgen_api.sh` | HTTP API |
-| `edit_agent/webapp.py` | Gradio UI |
-| `edit_agent/slakh_edits.py`, `synth_dialogues_slakh.py`, `precompute_*.py` | dataset pipeline |
-| `evaluation/fad.py`, `evaluation/clap_score.py` | metrics |
-| `dataset_generation/` | dataset pipeline code + README |
-| `serving/` | FastAPI + Gradio serving + README |
 
 ---
 
