@@ -24,17 +24,17 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 torch.backends.cudnn.enabled = False
 if torch.cuda.is_available():
     torch.backends.cuda.enable_cudnn_sdp(False)
 
-from edit_agent.joint_data import JointDataset  # noqa: E402
-from edit_agent.musicgen_bridge import build_musicgen_bridge  # noqa: E402
-from edit_agent.qwen_wrapper import load_audio_16k  # noqa: E402
-from edit_agent.sft_data import SYSTEM_PROMPT, _assistant_label_mask  # noqa: E402
+from edit_agent.dataloaders.joint_data import JointDataset  # noqa: E402
+from edit_agent.models.musicgen_bridge import build_musicgen_bridge  # noqa: E402
+from edit_agent.models.qwen_wrapper import load_audio_16k  # noqa: E402
+from edit_agent.dataloaders.sft_data import SYSTEM_PROMPT, _assistant_label_mask  # noqa: E402
 
 QWEN_DTYPE = torch.bfloat16
 
@@ -42,7 +42,7 @@ QWEN_DTYPE = torch.bfloat16
 def load_trainable_thinker(lora_dir: str, device: str):
     from transformers import Qwen2_5OmniProcessor, Qwen2_5OmniThinkerForConditionalGeneration
     from peft import PeftModel
-    from edit_agent.qwen_wrapper import WEIGHTS_CACHE, DEFAULT_MODEL, add_edit_tokens
+    from edit_agent.models.qwen_wrapper import WEIGHTS_CACHE, DEFAULT_MODEL, add_edit_tokens
     proc = Qwen2_5OmniProcessor.from_pretrained(DEFAULT_MODEL, cache_dir=WEIGHTS_CACHE)
     model = Qwen2_5OmniThinkerForConditionalGeneration.from_pretrained(
         DEFAULT_MODEL, cache_dir=WEIGHTS_CACHE, torch_dtype=QWEN_DTYPE,
@@ -125,6 +125,10 @@ def main() -> None:
                    help="loss = lam*L_musicgen + (1-lam)*CE_LM (Qwen built-in)")
     p.add_argument("--latent-weight", type=float, default=0.5,
                    help="L2-latent weight inside L_musicgen (hybrid loss)")
+    p.add_argument("--cls-weight", type=float, default=0.0,
+                   help="weight of the hierarchical semantic classifier loss "
+                        "on the live edit-token states")
+    p.add_argument("--ckpt-dir", type=str, default="ckpts/edit_agent/joint")
     p.add_argument("--accum", type=int, default=4)
     p.add_argument("--steps", type=int, default=8000)
     p.add_argument("--max-steps", type=int, default=None)
@@ -133,16 +137,16 @@ def main() -> None:
     args = p.parse_args()
     device = args.device
 
-    ckpt_dir = PROJECT_ROOT / "ckpts/edit_agent/joint"
+    ckpt_dir = PROJECT_ROOT / args.ckpt_dir
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
     model, proc, edit_ids = load_trainable_thinker(
         str(PROJECT_ROOT / args.qwen_init), device)
     if args.arch == "fusion":
-        from edit_agent.musicgen_fusion import build_fusion_bridge
+        from edit_agent.models.musicgen_fusion import build_fusion_bridge
         bridge = build_fusion_bridge(torch.device(device))
     elif args.arch == "kv":
-        from edit_agent.musicgen_kv import build_kv_bridge
+        from edit_agent.models.musicgen_kv import build_kv_bridge
         bridge = build_kv_bridge(torch.device(device))
     else:
         bridge = build_musicgen_bridge(torch.device(device))
@@ -154,6 +158,12 @@ def main() -> None:
         bridge.latent_weight = args.latent_weight
         print(f"latent L2 on in joint, weight {args.latent_weight}; "
               f"lam {args.lam}", flush=True)
+
+    classifier = None
+    if args.cls_weight > 0:
+        from edit_agent.models.edit_classifier import EditSemanticClassifier
+        classifier = EditSemanticClassifier().to(device)
+        print(f"semantic classifier on, weight {args.cls_weight}", flush=True)
 
     q_params = [pp for pp in model.parameters() if pp.requires_grad]
     b_params = bridge.trainable_parameters()
@@ -170,9 +180,11 @@ def main() -> None:
 
     total = args.max_steps or args.steps
     warmup = min(300, total // 10)
-    opt = torch.optim.AdamW([{"params": q_params, "lr": args.lr_qwen},
-                             {"params": b_params, "lr": args.lr_bridge}],
-                            weight_decay=0.01)
+    groups = [{"params": q_params, "lr": args.lr_qwen},
+              {"params": b_params, "lr": args.lr_bridge}]
+    if classifier is not None:
+        groups.append({"params": list(classifier.parameters()), "lr": 1e-4})
+    opt = torch.optim.AdamW(groups, weight_decay=0.01)
 
     def lam(step):
         if step < warmup:
@@ -184,7 +196,7 @@ def main() -> None:
     model.train(); bridge.train()
 
     step, t0 = 0, time.time()
-    run_lm, run_mg = [], []
+    run_lm, run_mg, run_cls = [], [], []
     micro = 0
     done = False
     while not done:
@@ -206,6 +218,13 @@ def main() -> None:
                                 else None)
                     loss = loss + args.lam * mg
                     run_mg.append(mg.item())
+                if classifier is not None and h is not None:
+                    cls_loss, st = classifier.loss(h.float().unsqueeze(0),
+                                                   ex.get("sem_kind"),
+                                                   ex.get("sem_inst"))
+                    loss = loss + args.cls_weight * cls_loss
+                    if "inst_ok" in st:
+                        run_cls.append(st["inst_ok"])
                 run_lm.append(lm.item())
             except torch.cuda.OutOfMemoryError:
                 print("[warn] OOM, example skipped", flush=True)
@@ -228,22 +247,29 @@ def main() -> None:
                 if step % 25 == 0:
                     lm_a = sum(run_lm) / max(len(run_lm), 1)
                     mg_a = sum(run_mg) / max(len(run_mg), 1)
-                    print(f"step {step}/{total} lm {lm_a:.4f} mg {mg_a:.4f} "
+                    ca = (f" inst-acc {sum(run_cls)/len(run_cls):.2f}"
+                          if run_cls else "")
+                    print(f"step {step}/{total} lm {lm_a:.4f} mg {mg_a:.4f}{ca} "
                           f"lr {sched.get_last_lr()[0]:.2e} "
                           f"({(time.time()-t0)/step:.1f}s/step)", flush=True)
-                    run_lm, run_mg = [], []
+                    run_lm, run_mg, run_cls = [], [], []
                 if step % 500 == 0:
                     vl, vm = evaluate(model, proc, bridge, val_loader, edit_ids, device)
                     print(f"[val] step {step}: lm {vl:.4f} mg {vm:.4f}", flush=True)
                 if step % 1000 == 0:
                     model.save_pretrained(ckpt_dir / f"step_{step}" / "qwen")
                     bridge.save_adapter(ckpt_dir / f"step_{step}" / "musicgen")
+                    if classifier is not None:
+                        torch.save(classifier.state_dict(),
+                                   ckpt_dir / f"step_{step}" / "classifier.pt")
                 if step >= total:
                     done = True
                     break
 
     model.save_pretrained(ckpt_dir / "final" / "qwen")
     bridge.save_adapter(ckpt_dir / "final" / "musicgen")
+    if classifier is not None:
+        torch.save(classifier.state_dict(), ckpt_dir / "final" / "classifier.pt")
     vl, vm = evaluate(model, proc, bridge, val_loader, edit_ids, device)
     print(f"done: {step} steps, final val lm {vl:.4f} mg {vm:.4f}, "
           f"saved to {ckpt_dir/'final'}", flush=True)

@@ -28,7 +28,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from data_utils.llm_client import LLM_MODEL, LLMError, chat_json  # noqa: E402
 from data_utils.llm_client import map_concurrent  # noqa: E402
-from edit_agent.mood_map import CATEGORY_EN, ImagePool, mood_to_category  # noqa: E402
+from dataset_generation.mood_map import CATEGORY_EN, ImagePool, mood_to_category  # noqa: E402
 from edit_agent.tokens import EDIT_BLOCK  # noqa: E402
 
 DATASET = PROJECT_ROOT / "data/edit_dataset/manifests/dataset.jsonl"

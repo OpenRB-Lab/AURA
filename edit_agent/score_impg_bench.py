@@ -17,7 +17,9 @@ torch.backends.cudnn.enabled = False
 if torch.cuda.is_available():
     torch.backends.cuda.enable_cudnn_sdp(False)
 
-BENCH = PROJECT_ROOT / "results/impg_bench"
+import os
+BENCH = PROJECT_ROOT / os.environ.get("BENCH_DIR", "results/impg_bench")
+OUT_NAME = os.environ.get("BENCH_OUT", "output")
 TASKS = ["add", "remove", "extract"]
 DEV = "cuda:0"
 SR = 32000
@@ -25,7 +27,7 @@ SR = 32000
 
 def pairs(task):
     out = []
-    for p in sorted((BENCH / task / "output").glob("*.wav")):
+    for p in sorted((BENCH / task / OUT_NAME).glob("*.wav")):
         gt = BENCH / task / "ground_truth" / p.name
         inp = BENCH / task / "input" / p.name
         txt = (BENCH / task / "instruction" / f"{p.stem}.txt").read_text().splitlines()[0]
@@ -44,7 +46,7 @@ scores: dict[str, dict] = {t: {} for t in TASKS}
 # ── FAD ─────────────────────────────────────────────────────────
 from evaluation.fad import compute_fad  # noqa: E402
 for t in TASKS:
-    scores[t]["fad"] = compute_fad(str(BENCH / t / "output"),
+    scores[t]["fad"] = compute_fad(str(BENCH / t / OUT_NAME),
                                    str(BENCH / t / "ground_truth"), verbose=False)
     print(f"{t}: FAD {scores[t]['fad']:.3f}", flush=True)
 
@@ -147,5 +149,6 @@ for t in ["remove", "extract"]:
     print(f"{t}: SI-SDR {scores[t]['si_sdr']:.2f} SI-SDRi {scores[t]['si_sdri']:.2f}",
           flush=True)
 
-json.dump(scores, open(BENCH / "scores.json", "w"), indent=1)
+_out_json = "scores.json" if OUT_NAME == "output" else f"scores_{OUT_NAME}.json"
+json.dump(scores, open(BENCH / _out_json, "w"), indent=1)
 print(json.dumps(scores, indent=1), flush=True)

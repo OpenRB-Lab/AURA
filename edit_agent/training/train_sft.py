@@ -20,11 +20,11 @@ import torch
 import yaml
 from torch.utils.data import DataLoader
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from edit_agent.qwen_wrapper import load_thinker  # noqa: E402
-from edit_agent.sft_data import DialogueDataset, make_collate  # noqa: E402
+from edit_agent.models.qwen_wrapper import load_thinker  # noqa: E402
+from edit_agent.dataloaders.sft_data import DialogueDataset, make_collate  # noqa: E402
 
 torch.backends.cudnn.enabled = False
 
@@ -68,11 +68,27 @@ def main() -> None:
     parser.add_argument("--max-steps", type=int, default=None)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--num-workers", type=int, default=2)
+    parser.add_argument("--dialogues", type=str, default=None,
+                        help="override paths.dialogues_jsonl")
+    parser.add_argument("--init-lora", type=str, default=None,
+                        help="warm-start: continue training this adapter "
+                             "instead of creating a fresh LoRA")
+    parser.add_argument("--ckpt-name", type=str, default="sft",
+                        help="checkpoint subdir under ckpt_root")
+    parser.add_argument("--lr", type=float, default=None, help="override sft.lr")
+    parser.add_argument("--epochs", type=int, default=None,
+                        help="override sft.epochs")
     args = parser.parse_args()
 
     cfg = yaml.safe_load(open(args.config))
     sft = cfg["sft"]
-    ckpt_dir = PROJECT_ROOT / cfg["paths"]["ckpt_root"] / "sft"
+    if args.lr:
+        sft["lr"] = args.lr
+    if args.epochs:
+        sft["epochs"] = args.epochs
+    if args.dialogues:
+        cfg["paths"]["dialogues_jsonl"] = args.dialogues
+    ckpt_dir = PROJECT_ROOT / cfg["paths"]["ckpt_root"] / args.ckpt_name
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
     model, processor, edit_ids = load_thinker(cfg["qwen"]["model_id"], device=args.device)
@@ -80,7 +96,14 @@ def main() -> None:
     model.audio_tower.requires_grad_(False)
     if hasattr(model, "visual"):
         model.visual.requires_grad_(False)
-    model = build_lora(model, sft)
+    if args.init_lora:
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, PROJECT_ROOT / args.init_lora,
+                                          is_trainable=True)
+        model.print_trainable_parameters()
+        print(f"warm-started LoRA from {args.init_lora}", flush=True)
+    else:
+        model = build_lora(model, sft)
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
     model.train()

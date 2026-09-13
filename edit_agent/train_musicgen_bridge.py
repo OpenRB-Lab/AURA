@@ -30,15 +30,17 @@ from edit_agent.musicgen_data import MusicGenBridgeDataset, collate  # noqa: E40
 
 
 @torch.no_grad()
-def evaluate(model, loader, device, max_batches=40):
+def evaluate(model, loader, device, max_batches=40, use_stem=False):
     model.eval()
     tot, n = 0.0, 0
     for i, b in enumerate(loader):
         if i >= max_batches:
             break
+        sm = b["stem_mode"].to(device) if use_stem and "stem_mode" in b else None
         loss = model(b["h"].to(device), b["src"].to(device), b["tgt"].to(device),
                      n_frames=b["n_frames"].to(device),
-                     z_tgt=b["z_tgt"].to(device) if "z_tgt" in b else None)
+                     z_tgt=b["z_tgt"].to(device) if "z_tgt" in b else None,
+                     stem_mode=sm)
         tot += loss.item(); n += 1
     model.train()
     return tot / max(n, 1)
@@ -72,7 +74,19 @@ def main() -> None:
                         "(fusion arch; needs latent32 cache)")
     p.add_argument("--silence-filter", action="store_true",
                    help="drop Slakh rows with >30%% silent source windows")
+    p.add_argument("--stem-mode-mix", type=float, default=0.0,
+                   help="fraction of stem-mode rows (isolated-stem targets, "
+                        "fusion arch only; needs stem_encodec cache)")
     p.add_argument("--device", type=str, default="cuda")
+    p.add_argument("--freeze-film", action="store_true",
+                   help="RQ4 ablation: zero+freeze FiLM+gate (no dual-stream "
+                        "modulation; only cross-attn concept conditioning)")
+    p.add_argument("--freeze-bifam", action="store_true",
+                   help="RQ4 ablation: zero+freeze alpha1/alpha2 (no reference "
+                        "signal into FiLM)")
+    p.add_argument("--ref-fusion", default="bifam",
+                   choices=["bifam", "none", "crossattn", "concat", "both"],
+                   help="reference-fusion mechanism (fusion arch only)")
     args = p.parse_args()
 
     import os
@@ -115,6 +129,23 @@ def main() -> None:
         raw_model.decoder.to(args.device, dtype=torch.bfloat16)
         if is_main:
             print(f"warm-started from {args.init_from}", flush=True)
+    if args.arch == "fusion":
+        # set AFTER warm-start so it overrides the loaded ckpt's ref_fusion
+        raw_model.ref_fusion = args.ref_fusion
+        if is_main:
+            print(f"[ref-fusion] {raw_model.ref_fusion}", flush=True)
+    if args.freeze_film:
+        raw_model.gate.data.zero_(); raw_model.gate.requires_grad_(False)
+        for m in raw_model.film:
+            for p in m.parameters():
+                p.data.zero_(); p.requires_grad_(False)
+        if is_main:
+            print("[ablate] FiLM+gate zeroed & frozen", flush=True)
+    if args.freeze_bifam:
+        raw_model.alpha1.data.zero_(); raw_model.alpha1.requires_grad_(False)
+        raw_model.alpha2.data.zero_(); raw_model.alpha2.requires_grad_(False)
+        if is_main:
+            print("[ablate] alpha1/alpha2 zeroed & frozen", flush=True)
     model = raw_model
     if ddp:
         from torch.nn.parallel import DistributedDataParallel as DDP
@@ -127,10 +158,18 @@ def main() -> None:
     train_ds = MusicGenBridgeDataset("train", limit=args.limit,
                                      id_filter=args.data_filter,
                                      latent=args.latent_weight > 0,
-                                     silence_filter=args.silence_filter)
+                                     silence_filter=args.silence_filter,
+                                     stem_mode_mix=args.stem_mode_mix)
     val_ds = MusicGenBridgeDataset("val", limit=200, id_filter=args.data_filter,
                                    latent=args.latent_weight > 0,
                                    silence_filter=args.silence_filter)
+    val_stem_loader = None
+    if args.stem_mode_mix > 0:
+        val_stem_ds = MusicGenBridgeDataset("val", limit=200,
+                                            id_filter=args.data_filter,
+                                            stem_mode_mix=-1.0)
+        val_stem_loader = DataLoader(val_stem_ds, batch_size=8, num_workers=2,
+                                     collate_fn=collate)
     if is_main:
         print(f"train {len(train_ds)} / val {len(val_ds)} examples", flush=True)
     sampler = None
@@ -168,7 +207,9 @@ def main() -> None:
             loss = model(b["h"].to(args.device), b["src"].to(args.device),
                          b["tgt"].to(args.device),
                          n_frames=b["n_frames"].to(args.device),
-                         z_tgt=b["z_tgt"].to(args.device) if "z_tgt" in b else None)
+                         z_tgt=b["z_tgt"].to(args.device) if "z_tgt" in b else None,
+                         stem_mode=b["stem_mode"].to(args.device)
+                         if args.stem_mode_mix > 0 else None)
             if not torch.isfinite(loss):
                 print(f"[warn] non-finite loss at step {step}, batch skipped", flush=True)
                 opt.zero_grad(set_to_none=True)
@@ -191,7 +232,12 @@ def main() -> None:
                     running = []
                 if step % 1000 == 0 and is_main:
                     vl = evaluate(raw_model, val_loader, args.device)
-                    print(f"[val] step {step}: ce {vl:.4f}", flush=True)
+                    msg = f"[val] step {step}: ce {vl:.4f}"
+                    if val_stem_loader is not None:
+                        vs = evaluate(raw_model, val_stem_loader, args.device,
+                                      use_stem=True)
+                        msg += f" stem_ce {vs:.4f}"
+                    print(msg, flush=True)
                 if step % 2000 == 0 and is_main:
                     raw_model.save_adapter(ckpt_dir / f"step_{step}")
                 if step >= total_steps:

@@ -27,7 +27,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from data_utils.llm_client import LLM_MODEL, LLMError, chat_json, map_concurrent  # noqa: E402
-from edit_agent.synth_dialogues import DIALOGUE_SCHEMA, validate_turns  # noqa: E402
+from dataset_generation.synth_dialogues import DIALOGUE_SCHEMA, validate_turns  # noqa: E402
 from edit_agent.tokens import EDIT_BLOCK  # noqa: E402
 
 SAMPLE = PROJECT_ROOT / "data/edit_dataset/audioedit_sample.jsonl"

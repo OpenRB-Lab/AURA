@@ -14,12 +14,15 @@ from pathlib import Path
 import torch
 from torch.utils.data import Dataset
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from edit_agent.tokens import typed_block  # noqa: E402
 
 CACHE = PROJECT_ROOT / "data/edit_dataset/bridge_cache"
+
+_sem_p = CACHE / "semantic_labels.json"
+_SEM_LABELS = json.load(open(_sem_p)) if _sem_p.exists() else {}
 DIALOGUES = PROJECT_ROOT / "data/edit_dataset/dialogues/dialogues.jsonl"
 
 
@@ -83,9 +86,11 @@ class JointDataset(Dataset):
                 msgs = msgs[: 2 * e["step_index"] + 2]  # through assistant turn i
             chunk = d["chunk_path"]
         enc = torch.load(CACHE / "encodec" / f"{e['example_id']}.pt", weights_only=True)
+        lab = _SEM_LABELS.get(e["example_id"]) or {}
         z_tgt = None
         lat_p = CACHE / "latent32" / f"{e['example_id']}.pt"
         if lat_p.exists():
             z_tgt = torch.load(lat_p, weights_only=True)["tgt"].float()
         return {"kind": "edit", "messages": msgs, "chunk_path": chunk,
-                "image_path": e.get("image_path"), "enc": enc, "z_tgt": z_tgt}
+                "image_path": e.get("image_path"), "enc": enc, "z_tgt": z_tgt,
+                "sem_kind": lab.get("kind"), "sem_inst": lab.get("inst")}

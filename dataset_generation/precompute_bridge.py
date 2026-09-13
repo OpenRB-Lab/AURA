@@ -172,8 +172,8 @@ def run_latents(shard: str | None) -> None:
 # ──────────────────────────────────────────────────────────────
 
 def run_hidden(shard: str | None, only_split: str | None = None) -> None:
-    from edit_agent.qwen_wrapper import find_edit_positions, load_audio_16k, load_thinker
-    from edit_agent.sft_data import SYSTEM_PROMPT
+    from edit_agent.models.qwen_wrapper import find_edit_positions, load_audio_16k, load_thinker
+    from edit_agent.dataloaders.sft_data import SYSTEM_PROMPT
 
     out_dir = CACHE / "hidden"
     out_dir.mkdir(parents=True, exist_ok=True)
