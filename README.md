@@ -4,6 +4,11 @@
 
 ¹ Aalto University  ·  ² Technical University of Denmark  ·  ³ University of South Dakota  ·  ⁴ OpenRB Lab
 
+[![arXiv](https://img.shields.io/badge/arXiv-TODO-b31b1b.svg)](https://arxiv.org/abs/TODO)
+[![Model](https://img.shields.io/badge/🤗_Model-AURA-yellow.svg)](https://huggingface.co/OpenRB-Lab/AURA)
+[![Dataset](https://img.shields.io/badge/🤗_Dataset-AURA--Chat--Edit-yellow.svg)](https://huggingface.co/datasets/OpenRB-Lab/AURA-Chat-Edit)
+[![Demo](https://img.shields.io/badge/🎵_Demo-AURA-green.svg)](https://openrb-lab.github.io/AURA-demo/)
+
 <p align="center">
   <img src="assets/AURA-1.png" alt="AURA architecture" width="100%">
 </p>
@@ -149,5 +154,3 @@ field, so no further glue is needed.
   note      = {arXiv preprint, arXiv:TODO (to appear)}
 }
 ```
-
-> The arXiv version will be linked here once available (~Sep 2026).
