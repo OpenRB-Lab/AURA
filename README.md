@@ -30,11 +30,6 @@ FiLM; edit tokens as cross-attention K/V with LoRA) that renders the edited
 audio through EnCodec. Localized edits are code-anchored outside the requested
 segment and seam-crossfaded.
 
-Headline results (production checkpoints `ckpts/edit_agent/joint_fusion_r64/final`):
-60-clip mixed benchmark FAD 2.15 / MuLan cos 0.661; Slakh IMPG-protocol
-benchmark (100 clips/task): add FAD 1.49, remove 1.36, extract 6.13
-(Instruct-MusicGen published: 3.75 / 3.35 / 3.24).
-
 ---
 
 ## 1. Installation
