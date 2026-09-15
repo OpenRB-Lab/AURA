@@ -4,7 +4,7 @@
 
 ¹ Aalto University  ·  ² Technical University of Denmark  ·  ³ University of South Dakota  ·  ⁴ OpenRB Lab
 
-[![arXiv](https://img.shields.io/badge/arXiv-TODO-b31b1b.svg)](https://arxiv.org/abs/TODO)
+[![arXiv](https://img.shields.io/badge/arXiv-2609.14344-b31b1b.svg)](https://arxiv.org/abs/2609.14344)
 [![Model](https://img.shields.io/badge/🤗_Model-AURA-yellow.svg)](https://huggingface.co/OpenRB-Lab/AURA)
 [![Dataset](https://img.shields.io/badge/🤗_Dataset-AURA--Chat--Edit-yellow.svg)](https://huggingface.co/datasets/OpenRB-Lab/AURA-Chat-Edit)
 [![Demo](https://img.shields.io/badge/🎵_Demo-AURA-green.svg)](https://openrb-lab.github.io/AURA-demo/)
@@ -142,10 +142,13 @@ field, so no further glue is needed.
 ## Citation
 
 ```bibtex
-@inproceedings{trinh2026aura,
-  title     = {AURA: Unified Multimodal Framework for Conversational Music Editing},
-  author    = {Trinh, Quoc-Huy and Nguyen, Minh-Van and Jha, Debesh},
-  year      = {2026},
-  note      = {arXiv preprint, arXiv:TODO (to appear)}
+@misc{trinh2026auraunifiedmultimodalframework,
+      title={AURA: Unified Multimodal Framework for Conversational Music Editing}, 
+      author={Quoc-Huy Trinh and Minh-Van Nguyen and Debesh Jha},
+      year={2026},
+      eprint={2609.14344},
+      archivePrefix={arXiv},
+      primaryClass={cs.SD},
+      url={https://arxiv.org/abs/2609.14344}, 
 }
 ```
